@@ -81,6 +81,15 @@ class User(Base):  # identity & profile
 
 _DEFAULT_PROFILE_IMAGE_URL = '/api/v1/users/{user_id}/profile/image'
 
+ROLE_DEFAULT_PERMISSIONS = {
+    'admin': None,
+    'user': 'user.permissions',
+    'export': 'user.permissions',
+    'local': 'user.permissions',
+    'c-level': 'user.permissions',
+    'pending': None,
+}
+
 
 class UserModel(BaseModel):
     id: str

@@ -146,7 +146,10 @@
 												required
 											>
 												<option value="admin">{$i18n.t('Admin')}</option>
+												<option value="c-level">{$i18n.t('C-Level')}</option>
 												<option value="user">{$i18n.t('User')}</option>
+												<option value="export">{$i18n.t('Export')}</option>
+												<option value="local">{$i18n.t('Local')}</option>
 												<option value="pending">{$i18n.t('Pending')}</option>
 											</select>
 										</div>

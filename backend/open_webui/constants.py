@@ -35,6 +35,16 @@ class WEBHOOK_MESSAGES(str, Enum):
     USER_SIGNUP = lambda username='': f'New user signed up: {username}' if username else 'New user signed up'
 
 
+class ROLES:
+    ADMIN = 'admin'
+    USER = 'user'
+    EXPORT = 'export'
+    LOCAL = 'local'
+    C_LEVEL = 'c-level'
+    PENDING = 'pending'
+    VERIFIED = {ADMIN, USER, EXPORT, LOCAL, C_LEVEL}
+
+
 class ERROR_MESSAGES(str, Enum):
     def __str__(self) -> str:
         return super().__str__()

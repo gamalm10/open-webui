@@ -203,6 +203,9 @@
 									>
 										<option value="pending"> {$i18n.t('pending')} </option>
 										<option value="user"> {$i18n.t('user')} </option>
+										<option value="export"> {$i18n.t('export')} </option>
+										<option value="local"> {$i18n.t('local')} </option>
+										<option value="c-level"> {$i18n.t('c-level')} </option>
 										<option value="admin"> {$i18n.t('admin')} </option>
 									</select>
 								</div>

@@ -238,14 +238,16 @@
 								</td>
 								<td class="px-3 py-1 min-w-[7rem] w-28">
 									<div class=" translate-y-0.5">
-										<Badge
-											type={user.role === 'admin'
-												? 'info'
+									<Badge
+										type={user.role === 'admin'
+											? 'info'
+											: user.role === 'c-level'
+												? 'warning'
 												: user.role === 'user'
 													? 'success'
 													: 'muted'}
-											content={$i18n.t(user.role)}
-										/>
+										content={$i18n.t(user.role)}
+									/>
 									</div>
 								</td>
 								<td class="px-3 py-1 font-medium text-gray-900 dark:text-white max-w-48">

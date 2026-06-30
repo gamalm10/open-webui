@@ -18,7 +18,7 @@ from open_webui.config import (
     ENABLE_PASSWORD_AUTH,
     OAUTH_PROVIDERS,
 )
-from open_webui.constants import ERROR_MESSAGES
+from open_webui.constants import ERROR_MESSAGES, ROLES
 from open_webui.events import EVENTS, publish_event
 from open_webui.env import (
     AIOHTTP_CLIENT_SESSION_SSL,
@@ -700,7 +700,7 @@ async def signin(
 
             if WEBUI_AUTH_TRUSTED_ROLE_HEADER:
                 trusted_role = request.headers.get(WEBUI_AUTH_TRUSTED_ROLE_HEADER, '').lower().strip()
-                if trusted_role in {'admin', 'user', 'pending'}:
+                if trusted_role in ROLES.VERIFIED | {ROLES.PENDING}:
                     if user.role != trusted_role:
                         await Users.update_user_role_by_id(user.id, trusted_role, db=db)
                 elif trusted_role:
@@ -1159,7 +1159,8 @@ async def update_admin_config(request: Request, form_data: AdminConfig, user=Dep
         int(form_data.AUTOMATION_MIN_INTERVAL) if form_data.AUTOMATION_MIN_INTERVAL else ''
     )
 
-    if form_data.DEFAULT_USER_ROLE not in ['pending', 'user', 'admin']:
+    valid_roles = ['pending', 'user', 'admin', 'export', 'local', 'c-level']
+    if form_data.DEFAULT_USER_ROLE not in valid_roles:
         updates.pop('ui.default_user_role', None)
 
     pattern = r'^(-1|0|(-?\d+(\.\d+)?)(ms|s|m|h|d|w))$'
