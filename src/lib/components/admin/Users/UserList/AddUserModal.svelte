@@ -81,7 +81,7 @@
 						if (idx > 0) {
 							if (
 								columns.length === 4 &&
-								['admin', 'user', 'pending'].includes(columns[3].toLowerCase())
+								['admin', 'user', 'pending', 'export', 'local', 'c-level'].includes(columns[3].toLowerCase())
 							) {
 								validRows.push({ idx, columns });
 							} else {
