@@ -22,6 +22,7 @@ from open_webui.config import BYPASS_ADMIN_ACCESS_CONTROL
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import BYPASS_MODEL_ACCESS_CONTROL, GLOBAL_LOG_LEVEL
 from open_webui.models.functions import Functions
+from open_webui.models.groups import Groups
 from open_webui.models.models import Models
 from open_webui.models.users import UserModel
 from open_webui.socket.main import (
@@ -258,7 +259,12 @@ async def generate_function_chat_completion(request, form_data, user, models: di
         '__task__': __task__,
         '__task_body__': __task_body__,
         '__files__': files,
-        '__user__': user.model_dump() if isinstance(user, UserModel) else {},
+        '__user__': {
+            **(user.model_dump() if isinstance(user, UserModel) else {}),
+            'groups': [g.name for g in (
+                await Groups.get_groups_by_member_id(user.id) if isinstance(user, UserModel) and hasattr(user, 'id') else []
+            )],
+        },
         '__metadata__': metadata,
         '__oauth_token__': oauth_token,
         '__request__': request,

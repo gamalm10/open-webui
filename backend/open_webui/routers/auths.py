@@ -182,6 +182,7 @@ async def create_session_response(
         )
 
     user_permissions = await get_permissions(user.id, await Config.get('user.permissions'), db=db)
+    user_groups = await Groups.get_groups_by_member_id(user.id, db=db)
     await publish_event(
         request,
         EVENTS.AUTH_LOGIN,
@@ -202,6 +203,7 @@ async def create_session_response(
         'role': user.role,
         'profile_image_url': f'/api/v1/users/{user.id}/profile/image',
         'permissions': user_permissions,
+        'groups': [g.name for g in user_groups],
     }
 
 
@@ -213,6 +215,7 @@ async def create_session_response(
 class SessionUserResponse(Token, UserProfileImageResponse):
     expires_at: int | None = None
     permissions: dict | None = None
+    groups: list | None = []
 
 
 class SessionUserInfoResponse(SessionUserResponse, UserStatus):
@@ -264,6 +267,7 @@ async def get_session_user(
         )
 
     user_permissions = await get_permissions(user.id, await Config.get('user.permissions'), db=db)
+    user_groups = await Groups.get_groups_by_member_id(user.id, db=db)
 
     response_data = {
         'token': token,
@@ -281,6 +285,7 @@ async def get_session_user(
         'status_message': user.status_message,
         'status_expires_at': user.status_expires_at,
         'permissions': user_permissions,
+        'groups': [g.name for g in user_groups],
     }
 
     return response_data

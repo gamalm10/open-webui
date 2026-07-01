@@ -50,6 +50,7 @@ from open_webui.env import AIOHTTP_CLIENT_TIMEOUT, SRC_LOG_LEVELS
 from pydantic_core import core_schema
 import time
 import re
+from datetime import datetime, timezone
 
 
 # Simplified encryption implementation with automatic handling
@@ -560,19 +561,30 @@ class Pipe:
                 }
             )
 
-    def extract_event_info(self, event_emitter):
+    def extract_event_info(self, event_emitter, body=None):
+        if body:
+            fallback_chat_id = body.get("chat_id") or body.get("metadata", {}).get("chat_id")
+            fallback_message_id = body.get("message_id") or body.get("metadata", {}).get("message_id")
+        else:
+            fallback_chat_id, fallback_message_id = None, None
+
         if not event_emitter or not event_emitter.__closure__:
-            return None, None
+            return fallback_chat_id, fallback_message_id
+
         for cell in event_emitter.__closure__:
             if isinstance(request_info := cell.cell_contents, dict):
-                chat_id = request_info.get("chat_id")
-                message_id = request_info.get("message_id")
-                return chat_id, message_id
-        return None, None
+                return (
+                    request_info.get("chat_id") or fallback_chat_id,
+                    request_info.get("message_id") or fallback_message_id,
+                )
+        return fallback_chat_id, fallback_message_id
 
-    def get_headers(self) -> Dict[str, str]:
+    def get_headers(self, user_token: Optional[str] = None) -> Dict[str, str]:
         """
         Constructs the headers for the API request.
+
+        Args:
+            user_token: Optional user auth token to forward for n8n callbacks
 
         Returns:
             Dictionary containing the required headers for the API request.
@@ -583,6 +595,10 @@ class Pipe:
         bearer_token = EncryptedStr.decrypt(self.valves.N8N_BEARER_TOKEN)
         if bearer_token:
             headers["Authorization"] = f"Bearer {bearer_token}"
+
+        # Forward user's auth token for n8n callbacks
+        if user_token:
+            headers["X-User-Token"] = user_token
 
         # Add Cloudflare Access headers if available
         cf_client_id = EncryptedStr.decrypt(self.valves.CF_ACCESS_CLIENT_ID)
@@ -756,13 +772,16 @@ class Pipe:
         __user__: Optional[dict] = None,
         __event_emitter__: Callable[[dict], Awaitable[None]] = None,
         __event_call__: Callable[[dict], Awaitable[dict]] = None,
+        __request__: Optional[Any] = None,
     ) -> Union[str, Generator, Iterator, Dict[str, Any], StreamingResponse]:
         """
         Main method for sending requests to the N8N endpoint.
 
         Args:
             body: The request body containing messages and other parameters
+            __user__: The requesting user's info dict
             __event_emitter__: Optional event emitter function for status updates
+            __request__: The FastAPI request object
 
         Returns:
             Response from N8N API, which could be a string, dictionary or streaming response
@@ -784,7 +803,10 @@ class Pipe:
                 question = question.split("Prompt: ")[-1]
             try:
                 # Extract chat_id and message_id
-                chat_id, message_id = self.extract_event_info(__event_emitter__)
+                chat_id, message_id = self.extract_event_info(
+                    __event_emitter__,
+                    body=body,
+                )
 
                 self.log.info(f"Starting N8N workflow request for chat ID: {chat_id}")
 
@@ -816,14 +838,25 @@ class Pipe:
                     "user_email": __user__.get("email") if __user__ else None,
                     "user_name": __user__.get("name") if __user__ else None,
                     "user_role": __user__.get("role") if __user__ else None,
+                    "user_groups": __user__.get("groups", []) if __user__ else [],
+                    "request_timestamp": datetime.now(timezone.utc).isoformat(),
                     "chat_id": chat_id,
                     "message_id": message_id,
                 }
                 # Keep backward compatibility
                 payload[self.valves.INPUT_FIELD] = question
 
+                # Extract user's auth token for n8n callbacks
+                user_token = None
+                if __request__:
+                    auth_header = __request__.headers.get("Authorization")
+                    if auth_header:
+                        user_token = auth_header
+                    else:
+                        user_token = __request__.cookies.get("token")
+
                 # Get headers for the request
-                headers = self.get_headers()
+                headers = self.get_headers(user_token=user_token)
 
                 # Create session with no timeout like in stream-example.py
                 session = aiohttp.ClientSession(

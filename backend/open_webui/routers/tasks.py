@@ -185,6 +185,7 @@ async def generate_title(request: Request, form_data: dict, user=Depends(get_ver
             'task': str(TASKS.TITLE_GENERATION),
             'task_body': form_data,
             'chat_id': form_data.get('chat_id', None),
+            'message_id': form_data.get('message_id', None),
         },
     }
 
@@ -255,6 +256,7 @@ async def generate_follow_ups(request: Request, form_data: dict, user=Depends(ge
             'task': str(TASKS.FOLLOW_UP_GENERATION),
             'task_body': form_data,
             'chat_id': form_data.get('chat_id', None),
+            'message_id': form_data.get('message_id', None),
         },
     }
 
@@ -325,6 +327,7 @@ async def generate_chat_tags(request: Request, form_data: dict, user=Depends(get
             'task': str(TASKS.TAGS_GENERATION),
             'task_body': form_data,
             'chat_id': form_data.get('chat_id', None),
+            'message_id': form_data.get('message_id', None),
         },
     }
 
