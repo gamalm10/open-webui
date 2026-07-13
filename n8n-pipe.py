@@ -22,7 +22,7 @@ features:
   - Three display modes: minimal (tool names only), compact (names + preview), detailed (full collapsible sections).
   - Customizable length limits for tool inputs and outputs.
   - Shows tool calls, inputs, and results from intermediateSteps in non-streaming mode (N8N limitation - streaming responses do not include intermediateSteps).
-"""
+  - customization for send model into n8n workflow, including system prompt and conversation history."""
 
 from typing import (
     Optional,
