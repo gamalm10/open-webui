@@ -579,6 +579,13 @@ class Pipe:
                 )
         return fallback_chat_id, fallback_message_id
 
+    def _format_elapsed(self, seconds: float) -> str:
+        minutes = int(seconds // 60)
+        secs = seconds % 60
+        if minutes > 0:
+            return f"{minutes}m {secs:.1f}s"
+        return f"{secs:.1f}s"
+
     def get_headers(self, user_token: Optional[str] = None) -> Dict[str, str]:
         """
         Constructs the headers for the API request.
@@ -880,6 +887,7 @@ class Pipe:
                     )
 
                 # Make the request
+                request_start_time = time.time()
                 request = session.post(
                     self.valves.N8N_URL, json=payload, headers=headers
                 )
@@ -1191,7 +1199,13 @@ class Pipe:
                         await self.emit_simple_status(
                             __event_emitter__, "complete", "Streaming complete", True
                         )
-                        return n8n_response
+                        elapsed = time.time() - request_start_time
+                        return {
+                            self.valves.RESPONSE_FIELD: n8n_response,
+                            "execution_time": self._format_elapsed(elapsed),
+                            "chat_id": chat_id,
+                            "message_id": message_id,
+                        }
                     else:
                         # Fallback to non-streaming response (robust parsing)
                         self.log.info(
@@ -1417,6 +1431,7 @@ class Pipe:
                         )
 
                         # Return OpenAI-format dict with usage so the middleware saves it to DB
+                        elapsed = time.time() - request_start_time
                         if usage:
                             return {
                                 "choices": [
@@ -1428,8 +1443,16 @@ class Pipe:
                                     }
                                 ],
                                 "usage": usage,
+                                "execution_time": self._format_elapsed(elapsed),
+                                "chat_id": chat_id,
+                                "message_id": message_id,
                             }
-                        return n8n_response
+                        return {
+                            self.valves.RESPONSE_FIELD: n8n_response,
+                            "execution_time": self._format_elapsed(elapsed),
+                            "chat_id": chat_id,
+                            "message_id": message_id,
+                        }
 
                 else:
                     error_text = await response.text()
